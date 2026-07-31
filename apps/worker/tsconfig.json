@@ -1,0 +1,8 @@
+{
+  "extends": "@lhm/config/tsconfig/node.json",
+  "include": ["src", "test", "eslint.config.mjs"],
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  }
+}

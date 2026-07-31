@@ -1,0 +1,35 @@
+{
+  "name": "@lhm/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup src/server.ts --format esm --platform node --target node22 --out-dir dist --clean",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@lhm/database": "workspace:*",
+    "@lhm/shared": "workspace:*",
+    "better-auth": "^1.2.3",
+    "fastify": "^5.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9.6.0",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "@lhm/config": "workspace:*",
+    "@lhm/eslint-config": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
+  }
+}
