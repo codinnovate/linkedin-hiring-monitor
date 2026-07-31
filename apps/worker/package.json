@@ -1,0 +1,33 @@
+{
+  "name": "@lhm/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --platform node --target node22 --out-dir dist --clean",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@lhm/database": "workspace:*",
+    "@lhm/shared": "workspace:*",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.2",
+    "pino": "^9.6.0",
+    "playwright": "^1.53.0",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "@lhm/config": "workspace:*",
+    "@lhm/eslint-config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
+  }
+}

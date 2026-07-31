@@ -1,0 +1,7 @@
+{
+  "extends": "@lhm/config/tsconfig/base.json",
+  "include": ["src", "prisma", "test"],
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}

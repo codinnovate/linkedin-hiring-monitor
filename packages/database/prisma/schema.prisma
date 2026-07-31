@@ -1,0 +1,334 @@
+// Generator
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------
+// Auth (BetterAuth-compatible tables) + application users
+// ---------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  searches      Search[]
+  notifications Notification[]
+  prefs         NotificationPreference[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  providerId        String
+  accountId         String
+  accessToken       String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------
+// Searches, keywords
+// ---------------------------------------------------------------
+
+model Search {
+  id              String   @id @default(cuid())
+  userId          String
+  query           String
+  keywords        String[]
+  location        String?
+  intervalMinutes Int      @default(15)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs    SearchRun[]
+  notifications Notification[]
+
+  @@unique([userId, query])
+  @@index([enabled])
+  @@map("search")
+}
+
+model Keyword {
+  id        String   @id @default(cuid())
+  value     String   @unique
+  category  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@map("keyword")
+}
+
+// ---------------------------------------------------------------
+// Posts, classification, deduplication
+// ---------------------------------------------------------------
+
+model LinkedInPost {
+  id                   String   @id @default(cuid())
+  liPostId             String?  @unique
+  url                  String?  @unique
+  contentHash          String   @unique
+  authorName           String?
+  authorProfileUrl     String?
+  authorHeadline       String?
+  company              String?
+  text                 String
+  images               String[]
+  videoUrl             String?
+  postedAtLabel        String?
+  postedAt             DateTime?
+  likes                Int?
+  comments             Int?
+  reposts              Int?
+  followers            Int?
+  searchQuery          String?
+  source               String   @default("linkedin-search")
+
+  isHiring             Boolean  @default(false)
+  confidence           Int?
+  role                 String?
+  location             String?
+  remote               Boolean?
+  skills               String[]
+  employmentType       String?
+  salaryMentioned      String?
+  classificationReason String?
+  matchedBy            String?
+  seenAt               DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  classifications Classification[]
+  notifications  Notification[]
+  duplicates     DuplicateIndex[]
+
+  @@index([isHiring, confidence])
+  @@index([seenAt])
+  @@index([postedAt])
+  @@index([createdAt])
+  @@map("linkedin_post")
+}
+
+model Classification {
+  id            String   @id @default(cuid())
+  postId        String
+  provider      String   @default("openai")
+  model         String
+  promptVersion String   @default("1")
+  isHiring      Boolean
+  confidence    Int?
+  role          String?
+  company       String?
+  location      String?
+  remote        Boolean?
+  skills        String[]
+  employmentType String?
+  salaryMentioned String?
+  reason        String?
+  latencyMs     Int?
+  inputTokens   Int?
+  outputTokens  Int?
+  createdAt     DateTime @default(now())
+
+  post LinkedInPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([createdAt])
+  @@map("classification")
+}
+
+model DuplicateIndex {
+  id            String   @id @default(cuid())
+  postId        String
+  sha256        String   @unique
+  method        String
+  sourcePostId  String?
+  similarity    Float?
+  detectedAt    DateTime @default(now())
+
+  post LinkedInPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([detectedAt])
+  @@map("duplicate_index")
+}
+
+// ---------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------
+
+enum NotificationChannel {
+  TELEGRAM
+  DISCORD
+  EMAIL
+  FIREBASE
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Notification {
+  id          String              @id @default(cuid())
+  userId      String?
+  searchId    String?
+  postId      String
+  channel     NotificationChannel
+  status      NotificationStatus  @default(PENDING)
+  payload     Json?
+  error       String?
+  deliveredAt DateTime?
+  createdAt   DateTime            @default(now())
+
+  user   User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  search Search?      @relation(fields: [searchId], references: [id], onDelete: SetNull)
+  post   LinkedInPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([postId])
+  @@index([createdAt])
+  @@map("notification")
+}
+
+model NotificationPreference {
+  id        String              @id @default(cuid())
+  userId    String
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+  config    Json?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel])
+  @@map("notification_preference")
+}
+
+// ---------------------------------------------------------------
+// Worker fleet + audit
+// ---------------------------------------------------------------
+
+enum WorkerStatus {
+  IDLE
+  BUSY
+  OFFLINE
+  ERROR
+}
+
+model Worker {
+  id            String       @id @default(cuid())
+  name          String       @unique
+  type          String       @default("playwright")
+  status        WorkerStatus @default(OFFLINE)
+  lastHeartbeat DateTime?
+  currentUrl    String?
+  lastJobId     String?
+  jobsCompleted Int          @default(0)
+  jobsFailed    Int          @default(0)
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status])
+  @@map("worker")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String?
+  action    String
+  entity    String?
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_log")
+}
+
+enum SearchRunStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model SearchRun {
+  id          String         @id @default(cuid())
+  searchId    String
+  status      SearchRunStatus @default(SUCCESS)
+  startedAt   DateTime       @default(now())
+  finishedAt  DateTime?
+  postsFound  Int            @default(0)
+  postsNew    Int            @default(0)
+  postsHiring Int            @default(0)
+  pageCount   Int            @default(0)
+  durationMs  Int?
+  error       String?
+
+  search Search @relation(fields: [searchId], references: [id], onDelete: Cascade)
+
+  @@index([searchId, startedAt])
+  @@map("search_run")
+}

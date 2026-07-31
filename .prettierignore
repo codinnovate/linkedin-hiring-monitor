@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+Dockerfile
+docker-compose*.yml
+*.prisma

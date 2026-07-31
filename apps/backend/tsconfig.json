@@ -1,0 +1,7 @@
+{
+  "extends": "@lhm/config/tsconfig/node.json",
+  "include": ["src", "test", "eslint.config.mjs"],
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}
