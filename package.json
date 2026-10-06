@@ -8,8 +8,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "node api.js && pnpm -r build",
-    "dev": "node api.js && pnpm --parallel --filter @lhm/database --filter @lhm/shared build && pnpm --parallel -r dev",
+    "build": "pnpm -r build",
+    "dev": "pnpm --parallel --filter @lhm/database --filter @lhm/shared build && pnpm --parallel -r dev",
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
